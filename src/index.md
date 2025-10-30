@@ -1,3 +1,6 @@
+---
+title: home
+---
 # Ella Hanson Design Brief
 ---------
 

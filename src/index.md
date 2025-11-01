@@ -16,7 +16,7 @@ https://www.fns.usda.gov/pd/supplemental-nutrition-assistance-program-snap
 I'm hoping to ask the percentage of people recieving SNAP benfits. I want to
 try and show that its a program that serves a large amount of people. 
 
-## 3. Visual Concept
+## 3. Visual Concept TEST
 
 I want to have a bubble chart that colors in the amount of people that get
 SNAP benefits where each bubble is representitive of a number of people.

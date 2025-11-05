@@ -3,7 +3,8 @@ title: Chart
 toc: false
 ---
 
-# Howdy
+# SNAP Benefits from 1988 to 2025
+## A month breakdown of the benefits broken down by state/territory.
 
 
 ```js
@@ -41,10 +42,12 @@ function mapData(line) {
     };
 }
 
+
+// da chart
 function bubbleChart(data, {
     // setting default settings unless i say so
     width = 400,
-    height = width,
+    height = width / 2,
     padding = 3,
     color = null,
     colorAccessor = i => i.avg_per_person,
@@ -105,7 +108,54 @@ function bubbleChart(data, {
         .attr("font-size", d => Math.max(8, d.r / 3))
         .attr("fill", "black")
         .text(i => stateAbbrev.get(i.state));
+    
+    // color legend 
+    const legendWidth = 250;
+    const legendHeight = 10;
+    const marginRight = 12;
+    const marginTop = 12;
 
+    const legend = svg.append("g")
+    .attr("transform", `translate(${width - legendWidth - marginRight}, ${marginTop})`);
+
+    const defs = svg.append("defs");
+    const gradId = "color-legend";
+    const [minVal, maxVal] = color.domain();
+
+    const gradient = defs.append("linearGradient")
+        .attr("id", gradId)
+        .attr("x1", "0%").attr("x2", "100%");
+
+    const steps = 60;
+    for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        const v = minVal + t * (maxVal - minVal);
+        gradient.append("stop")
+            .attr("offset", `${t * 100}%`)
+            .attr("stop-color", color(v));
+    }
+
+    legend.append("rect")
+        .attr("width", legendWidth)
+        .attr("height", legendHeight)
+        .attr("fill", `url(#${gradId})`)
+        .attr("stroke", "#ccc");
+    
+    const legendScale = d3.scaleLinear()
+        .domain([minVal, maxVal])
+        .range([0, legendWidth]);
+
+    const legendAxis = d3.axisBottom(legendScale)
+        .ticks(4)
+        .tickFormat(d3.format("$,.0f"));
+
+    legend.append("g")
+        .attr("transform", `translate(0,${legendHeight})`)
+        .call(legendAxis)
+        .call(g => g.select(".domain").remove())
+        .call(g => g.selectAll("text").attr("font-size", 10));
+    
+    // total cost at bot of screen
     const total = d3.sum(data, d => d.value);
 
     svg.append("text")
@@ -189,6 +239,11 @@ const globalRScale = d3.scaleSqrt()
   // size of the circles
   .range([2, 150]);
 
+// color scale but for all months
+const globalColor = d3.scaleSequential(d3.interpolateTurbo)
+  .domain([1, 500])
+  .clamp(true);
+
 ```
 
 ```js
@@ -204,10 +259,11 @@ console.log("usMonth:", usMonth);
 // slider shit
 const card = d3.select("#chart-card");
 
+// render the chart
 function render(selectedMonth) {
   card.selectAll("*").remove();
   const width = card.node().getBoundingClientRect().width;
-  card.append(() => bubbleChart(stateData(selectedMonth), { width }));
+  card.append(() => bubbleChart(stateData(selectedMonth), { width, color: globalColor }));
   d3.select("#month-label").text(selectedMonth);
 }
 
@@ -248,8 +304,6 @@ render(month);
   <div id="chart-card" class="card"></div>
 </div>
 
-<div id="slider_range"></div>
-
-
 ### Month: **<span id="month-label"></span>**
+<div id="slider_range"></div>
 

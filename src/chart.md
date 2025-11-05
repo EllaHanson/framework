@@ -9,6 +9,7 @@ toc: false
 ```js
 import * as d3 from "npm:d3@7";
 import * as Inputs from "npm:@observablehq/inputs@0.12";
+import { sliderBottom } from "npm:d3-simple-slider@1";
 
 const input = await FileAttachment("data/CleanSnapData.json").json();
 const stateAbbrev = new Map([
@@ -41,20 +42,17 @@ function mapData(line) {
 }
 
 function bubbleChart(data, {
+    // setting default settings unless i say so
     width = 400,
     height = width,
     padding = 3,
     color = null,
-    colorAccessor = i => i.avg_per_person
+    colorAccessor = i => i.avg_per_person,
+    rAccessor = i => i.value,
+    rScale = globalRScale
     } = {}
     ) {
 
-    // create pack layout and compute heirarchy
-    const root = (d3.pack()
-        .size([width,height])
-        .padding(padding)(
-            d3.hierarchy({children: data}).sum(i => i.value)
-        ))
 
     const svg = d3.create("svg")
         .attr("width", width)
@@ -69,18 +67,36 @@ function bubbleChart(data, {
       .interpolator(d3.interpolateYlGnBu);
   }
 
+  const nodes = (data
+    .map((d) => {
+        const lay = layoutByState.get(d.state); // precomputed in your baseline step
+        if (!lay) return null; // skip anything we can't place
+        return {
+          state: d.state,
+          value: rAccessor(d),
+          avg_per_person: d.avg_per_person,
+          x: lay.xN * width,     // normalized → pixel coords
+          y: lay.yN * height,    // normalized → pixel coords
+          r: rScale(rAccessor(d))// size from global scale (consistent across months)
+        };
+      })
+      .filter(Boolean));
+
+    // da circles
     svg.selectAll("circle")
-    .data(root.leaves())
+    .data(nodes)
     .join("circle")
     .attr("cx", i => i.x)
     .attr("cy", i => i.y)
     .attr("r", i => i.r)
     .attr("stroke", "black")
-    .attr("fill", i => color ? color(colorAccessor(i.data)) : "none");
+    .attr("fill", (i) =>
+      color ? color(colorAccessor({ avg_per_person: i.avg_per_person })) : "none"
+    )
 
-    
+    // state labels for da circles
     svg.selectAll("text")
-        .data(root.leaves().filter(d => d.r > 10))
+        .data(nodes.filter(d => d.r > 10))
         .join("text")
         .attr("x", d => d.x)
         .attr("y", d => d.y)
@@ -88,7 +104,7 @@ function bubbleChart(data, {
         .attr("dominant-baseline", "middle")
         .attr("font-size", d => Math.max(8, d.r / 3))
         .attr("fill", "black")
-        .text(i => stateAbbrev.get(i.data.state));
+        .text(i => stateAbbrev.get(i.state));
 
     const total = d3.sum(data, d => d.value);
 
@@ -141,6 +157,38 @@ for (const x of input){
 const months = Array.from(monthsSet).sort();
 const month = months[0];
 
+
+// get spots for the states
+const byState = d3.rollup(
+    input.filter(i => i.state !== "US Summary"),
+    val => ({v0: d3.median(val, i => i.total_cost)}),
+    i => i.state
+);
+
+// i dont want the circles moving all around
+const baseline = Array.from(byState, ([state, o]) => ({ state, value: o.v0 }));
+
+const LAYOUT_W = 1000, LAYOUT_H = 1000;
+const baselineRoot = d3.pack()
+  .size([LAYOUT_W, LAYOUT_H])
+  .padding(3)(d3.hierarchy({children: baseline}).sum(d => d.value));
+
+const layoutByState = new Map();
+for (const leaf of baselineRoot.leaves()) {
+  const s = leaf.data.state;
+  const xN = leaf.x / LAYOUT_W;
+  const yN = leaf.y / LAYOUT_H;
+  const r0 = leaf.r;
+  const v0 = byState.get(s).v0
+  layoutByState.set(s, { xN, yN, r0, v0 });
+}
+
+// global scale for all data to make circles grow over time
+const globalRScale = d3.scaleSqrt()
+  .domain([0, d3.max(input.filter(i => i.state !== "US Summary"), d => d.total_cost)])
+  // size of the circles
+  .range([2, 150]);
+
 ```
 
 ```js
@@ -153,21 +201,55 @@ console.log("statesMonth:", statesMonth.length, statesMonth.slice(0, 5));
 const usMonth = USData(firstMonth);
 console.log("usMonth:", usMonth);
 
+// slider shit
+const card = d3.select("#chart-card");
 
+function render(selectedMonth) {
+  card.selectAll("*").remove();
+  const width = card.node().getBoundingClientRect().width;
+  card.append(() => bubbleChart(stateData(selectedMonth), { width }));
+  d3.select("#month-label").text(selectedMonth);
+}
 
+const parseMonth = d3.timeParse("%Y-%m");
+const formatMonth = d3.timeFormat("%Y-%m");
 
+const monthDates = months.map(m => parseMonth(m)).sort(d3.ascending);
+
+const slider = sliderBottom()
+  .min(monthDates[0])
+  .max(monthDates[monthDates.length - 1])
+  .width(400)
+  // show spaced labels
+  .tickValues(monthDates.filter((d, i) => i % Math.max(1, Math.floor(monthDates.length / 6)) === 0))
+  .tickFormat(formatMonth)
+  .default(parseMonth(month))
+  .fill("#85bb65")
+  .on("onchange", (val) => {
+    const nearest = d3.least(monthDates, d => Math.abs(d - val));
+    render(formatMonth(nearest));
+  });
+
+const gSlider = d3
+  .select("#slider_range")
+  .append("svg")
+  .attr("width", 520)
+  .attr("height", 90)
+  .append("g")
+  .attr("transform", "translate(60,30)");
+
+gSlider.call(slider);
+render(month);
 
 ```
 
 
 <div class="grid grid-cols-1">
-  <div class="card">${resize(width => bubbleChart(stateData(month), {width}))}</div>
+  <div id="chart-card" class="card"></div>
 </div>
 
 <div id="slider_range"></div>
 
-<script src="https://unpkg.com/d3-simple-slider"></script>
 
-
-### Month: **${month}**
+### Month: **<span id="month-label"></span>**
 

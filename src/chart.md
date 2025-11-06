@@ -3,8 +3,11 @@ title: Chart
 toc: false
 ---
 
-# SNAP Benefits from 1988 to 2025
-## A month breakdown of the benefits broken down by state/territory.
+<h1>SNAP Benefits from 1988 to 2025</h1>
+
+<h2>A monthly breakdown of the total SNAP benefits provided by each state/territory.</h2>
+
+### Area of a circle is proportional and the color represents average benefits per person.
 
 
 ```js
@@ -47,7 +50,7 @@ function mapData(line) {
 function bubbleChart(data, {
     // setting default settings unless i say so
     width = 400,
-    height = width / 2,
+    height = width / 3,
     padding = 3,
     color = null,
     colorAccessor = i => i.avg_per_person,
@@ -116,7 +119,7 @@ function bubbleChart(data, {
     const marginTop = 12;
 
     const legend = svg.append("g")
-    .attr("transform", `translate(${width - legendWidth - marginRight}, ${marginTop})`);
+    .attr("transform", `translate(${width - legendWidth - marginRight}, ${-marginTop - 40})`);
 
     const defs = svg.append("defs");
     const gradId = "color-legend";

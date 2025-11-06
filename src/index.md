@@ -317,5 +317,13 @@ render(month);
 <div id="slider_range"></div>
 
 
+<h1>Design Analysis</h1>
+<p>With the current government shutdown, there is lots of uncertainty surrounding if and when SNAP benefits will be rolling out. I wanted to build a visualization that helped demonstrated the size and efficiency of the SNAP program, with 1 in 8 Americans receiving benefits.</p>
+<p>My original concept for the visualization was a bubble chart that visualized the total money given by each state. This choice of chart would allow me to display the different states as circles that didn’t overlap. Since there were so many months included in the data, I though a slider would be the best interaction for being able to watch the states change over time.</p>
+<p>Ultimately, the concept of the design changed from bubble chart to a force directional graph. This would allow the size of the states to influence the positions of the nodes, which helps avoid the circles from obscuring one another. The force physics also allowed the states to be positioned to their relative placements geographically.</p>
+<p>There were a couple of different sections of creating this interactive visualization that took the majority of my time. The first was creating a tidy dataset from the Excel sheets that the USDA provides for their data. This took far longer than it should have, the only reason I didn’t choose another topic was that I was already put at least 5 hours in. The other part that held me up was the slider. There were a few different attempts that I had to completely scrap, which meant I made very little progress in a lot of time. Even though I eventually found a tutorial that allowed me to make a slider successfully, this was only after 3 or so hours of seemingly making no progress. One more part of development that took a larger chunk of time was converting to a force directed graph. While the code isn’t too different, the force and physics capabilities of D3 were something that I needed to learn, which took about 2 hours. There were, of course, also the many hours of understanding and developing the many other smaller aspects of the project involving SVG, D3, JavaScript, and Observable Framework. Overall, I’d say I put in 17 hours into the assignment, but that is me giving my best guess.</p>
 
-
+<h2>Data Source</h2>
+<p>The U.S. Department of Agriculture – State Level Participation and Benefits</p>
+<p>Note: With the current government shutdown, the USDA website displays a banner containing offensive and discriminatory language.</p>
+<p><a href="https://www.fns.usda.gov/pd/supplemental-nutrition-assistance-program-snap" target="_blank" rel="noopener">https://www.fns.usda.gov/pd/supplemental-nutrition-assistance-program-snap</a></p>

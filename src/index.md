@@ -7,7 +7,7 @@ toc: false
 
 <h2>A monthly breakdown of the total SNAP benefits provided by each state/territory.</h2>
 
-### Area of a circle is proportional and the color represents average benefits per person.
+### Area of a circle is proportional to the total dollar from each state and color represents average benefits per person.
 
 
 ```js
@@ -54,7 +54,7 @@ function mapData(line) {
 function bubbleChart(data, {
     // setting default settings unless i say so
     width = 400,
-    height = width / 2,
+    height = width * .45,
     padding = 3,
     color = null,
     colorAccessor = i => i.avg_per_person,
